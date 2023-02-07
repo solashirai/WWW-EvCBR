@@ -1,0 +1,11 @@
+rdflib
+sparqlwrapper
+numpy
+networkx
+scipy
+sklearn
+requests
+flask
+ortools
+jupyter
+frozendict
