@@ -9,7 +9,7 @@ starting from the cause event and making predictions about the effect event's pr
 that can be used to make predictions. Framing our task in this way allows us to make predictions about
 new, unseen effect events only based on input properties about a cause event.
 
-![EvCBR Overview](images/MotivExample1.pdf)
+![EvCBR Overview](images/MotivExample1.jpg)
 
 This repository also contains a copy of our KG of causal event triples, curated from Wikidata. 
 The dataset is also hosted [here](https://zenodo.org/record/7196049#.Y0jVi9fMKUk).
