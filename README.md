@@ -2,10 +2,19 @@
 This repository contains code for our WWW'23 paper "Event Prediction using Case-Based Reasoning over
 Knowledge Graphs" (paper link to be added)
 
+EvCBR is a case-based reasoning model for performing event prediction using knowledge graphs.
+The main idea of our work is to (1) frame the task of event prediction as a 2-hop inductive link prediction task,
+starting from the cause event and making predictions about the effect event's properties, and 
+(2) retrieve cases of similar cause-effect event pairs in the KG in order to learn reasoning paths
+that can be used to make predictions. Framing our task in this way allows us to make predictions about
+new, unseen effect events only based on input properties about a cause event.
+
+![EvCBR Overview](images/MotivExample1.pdf)
+
 This repository also contains a copy of our KG of causal event triples, curated from Wikidata. 
 The dataset is also hosted [here](https://zenodo.org/record/7196049#.Y0jVi9fMKUk).
 
-## Preliminaries
+### Preliminaries
 
 We recommend that you create a new python virtual env and install the requirements. Our 
 experiments were performed using Python 3.8
