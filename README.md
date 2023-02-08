@@ -44,15 +44,14 @@ If desired, you can modify the default arguments such as the output directories.
 
 `python experiments/split_wikidata_dataset.py`
 
-This will produce two new folders in `data/` - `pp_wiki/`, containing txt files of the 
-triples in the train/test datasets, and `evcbr_pp_wiki/`, which is empty at this step but 
-will be populated next.
+This will produce a new folders in `data/` - `pp_wiki/`, containing txt files of the 
+triples in the train/test datasets.
 
 ### Preprocess Data
 
 Next, run the script to preprocess the data. The default arguments will point to the correct
 data, but you can also specify the input/output directories. From the previous step, the `pp_wiki/`
-folder will be the default input, and `evcbr_pp_wiki/` is the default output.
+folder will be the default input. By default output from this step will be placed in `evcbr_pp_wiki/`.
 
 `python experiments/preprocess_data_for_evcbr.py --process_wiki`
 
