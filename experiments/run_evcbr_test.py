@@ -89,7 +89,7 @@ def naive_evaluation_single_sample(F: EvCBR, q, output,
         precomp_sim_cases_refined_EFF, pscs_EFF, case_connection_scores_EFF = F.refine_similar_cases_with_target_forecasts_effect_coverage(
             target_entity=eval_s, candidates=precomp_sim_cases, forecast_properties=forecast_properties,
             forecast_step_relation=eval_p,
-            selected_cases=precomp_sim_cases_final,
+            selected_cases=precomp_similar_cases_final,
             print_info=False)
 
         for ind, sim_case in enumerate(precomp_sim_cases_refined_EFF[:s_cases_cov]):
