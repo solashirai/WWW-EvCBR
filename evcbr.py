@@ -297,6 +297,7 @@ class EvCBR:
                 target_entity=dummy_target_uri, candidates=sim_cases,
                 forecast_properties=forecast_relations,
                 forecast_step_relation=dummy_connecting_relation_uri,
+                selected_cases=similar_cases_final,
                 print_info=False)
 
             for ind, sim_case in enumerate(sim_cases_refined_EFF[:sample_case_cov_count]):
@@ -657,7 +658,6 @@ class EvCBR:
 
         candidate_scores = dict()
         candidate_score_breakdown = defaultdict(lambda: [])
-        # original local
         for c in candidates:
             candidate_outgoing = defaultdict(lambda: set())
             for p,o in self.KG.predicate_objects(subject=c):
@@ -737,7 +737,6 @@ class EvCBR:
         candidate_scores = dict()
         case_connection_scores = dict()
         candidate_score_breakdown = defaultdict(lambda: [])
-        # original local
         for c in candidates:
             cand_conn_dict = dict()
             candidate_outgoing = defaultdict(lambda: set())
@@ -773,6 +772,7 @@ class EvCBR:
     def refine_similar_cases_with_target_forecasts_effect_coverage(
             self, *, target_entity: URIRef, candidates: List[URIRef],
             forecast_properties: List[URIRef], forecast_step_relation: URIRef,
+            selected_cases: List[Tuple[URIRef, URIRef]] = None,
             print_info: bool = False):
         forecast_properties = set(forecast_properties)
 
@@ -828,7 +828,8 @@ class EvCBR:
         candidate_scores = dict()
         case_connection_scores = dict()
         candidate_score_breakdown = defaultdict(lambda: [])
-        # original local
+
+        previously_selected_set = set(selected_cases) if selected_cases else set()
         for c in candidates:
             cand_conn_dict = dict()
             candidate_outgoing = defaultdict(lambda: set())
@@ -846,6 +847,8 @@ class EvCBR:
                 candidate_score_breakdown[c].append(max_sim)
             best_outgoing_sim = 0
             for outgoing_forecast_ent in self.KG.objects(subject=c, predicate=forecast_step_relation):
+                if (c, outgoing_forecast_ent) in previously_selected_set:
+                    continue
                 outgoing_relations = set(self.triple_dict_forward[outgoing_forecast_ent].keys())
                 # get jaccard sim
                 this_outgoing_sim = len(outgoing_relations.intersection(forecast_properties)) / len(forecast_properties)
