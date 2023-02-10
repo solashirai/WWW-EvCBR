@@ -106,13 +106,11 @@ def naive_evaluation_single_sample(F: EvCBR, q, output,
         no_bkd_preds = 0
         total_preds = 0
 
-        ####################################################################################F.clean_forecast_triples()
-
         this_ranks = []
         for (target_rel, target_truth) in truth_pred_objs:
             this_property_ranks = {"prop_uri": target_rel, "prop_truth": target_truth,
-                                   'inner_ranks': [], #'predictions': [],
-                                   'inner_ranks_reversed': [], #'predictions_reversed': []
+                                   'inner_ranks': [],
+                                   'inner_ranks_reversed': [],
                                    'rev_plus_fwd': []
                                    }
             this_ranks.append(this_property_ranks)
@@ -137,7 +135,6 @@ def naive_evaluation_single_sample(F: EvCBR, q, output,
                                     predictions=sorted_forecast_res, max_rank=max_rank)
 
             this_ranks[ep_ind]["inner_ranks"].append(rank)
-            # this_ranks[ep_ind]["predictions"].append(sorted_forecast_res)
 
         ##################
         ##################
@@ -158,20 +155,15 @@ def naive_evaluation_single_sample(F: EvCBR, q, output,
             all_rev_in_top10 = True
             for ep_ind, (target_rel, target_truth) in enumerate(truth_pred_objs):
                 p_truths = ep_truths[target_rel]
-                # print("---")
-                # print(f"{eval_s, eval_p, eval_o} - {target_rel}, {target_truth}")
                 if len(forecast_res.sorted_property_prediction(property_uri=target_rel)) == 0:
                     no_fwd_preds += 1
                 if len(reverse_prediction_support[target_rel]) == 0:
                     no_bkd_preds += 1
                 total_preds += 1
-                # print("forward:", forecast_res.sorted_property_prediction(property_uri=target_rel)[:10])
-                # print("reverse:", reverse_prediction_support[target_rel][:10])
 
                 rev_rank = rank_predictions(target_truth=target_truth, all_true=p_truths,
                                               predictions=reverse_prediction_support[target_rel], max_rank=max_rank)
                 this_ranks[ep_ind]['inner_ranks_reversed'].append(rev_rank)
-                # this_ranks[ep_ind]['predictions_reversed'].append(reverse_prediction_support[target_rel])
                 if rev_rank > 10:
                     all_rev_in_top10 = False
 
@@ -192,20 +184,8 @@ def naive_evaluation_single_sample(F: EvCBR, q, output,
             for t in fake_induction_triples:
                 input_props[t[1]].add(t[2])
             ppc = {k:len(v) for k,v in ep_truths.items()}
-            ############## COMBINER LOGIC COMMENTED OUT
+            ############## COMBINER LOGIC REMOVED
             combiner_res = []
-            # combiner = ForecastPropertyCombiner(input_property_targets=input_props, prediction_property_counts=ppc)
-            # if not args.longer_combo_test:
-            #     combiner_res = combiner.compute_greedy_top_n_combinations(
-            #         forecast_support_forward=forecast_res.property_entity_support,
-            #         forecast_properties=set(forecast_properties), forecast_support=reverse_input_support, top_n=100
-            #     )
-            # else:
-            #     combiner_res = combiner.constraint_solver_strategy_avg_withforward_v2(
-            #         forecast_predictions=forecast_res.property_entity_support,
-            #         forecast_properties=set(forecast_properties), forecast_support=reverse_input_support, top_n=100
-            #     )
-            ############## COMBINER LOGIC COMMENTED OUT
             reverse_combos.append(combiner_res)
 
         if not args.do_reverse_and_predict:
@@ -215,11 +195,6 @@ def naive_evaluation_single_sample(F: EvCBR, q, output,
                               "forecast_property_ranks": this_ranks,
                               "property_combos": reverse_combos,
                                               }
-                            # 'combiner_stuff': {'input_property_targets': frozendict(input_props), 'ppc': ppc,
-                            #                    'forecast_support_forward': frozendict(forecast_res.property_entity_support),
-                            #                    'forecast_properties': set(forecast_properties),
-                            #                    'forecast_support': frozendict(reverse_res.property_input_support)}}
-        # print(f"no fwd: {no_fwd_preds}, no back: {no_bkd_preds}, out of {total_preds} total")
 
     print("worker finished")
     return
@@ -288,7 +263,7 @@ def main(args):
     pc['e2i'] = e2i
     pc['r2i'] = r2i
 
-    # important - expand the kg AFTER the networkx graph has been set up
+    ## expand the kg AFTER the networkx graph has been set up
     # enhance_kg_connections_to_superclasses(main_kg, [WDT_SUBCLASSOF])
 
     print("finished setting up")
@@ -353,7 +328,7 @@ def main(args):
     output_dict["no inv"] = args.prevent_inverse_paths
     output_dict["data dir"] = args.evcbr_pp_data_dir
 
-    # Uncomment the following code to recover from previous runs
+    # Uncomment the following code to recover from previous runs, specifying the right reload_target
     # reload_target = "eval_res_fullcombo_progress_4946.pkl"
     # with open((save_dir / reload_target).resolve(), "rb") as f:
     #     print(f"loaded previous evals")

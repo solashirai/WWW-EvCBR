@@ -50,13 +50,6 @@ class EvCBR:
         self.idf_weighted_subclass_matrix = self.subclass_matrix.multiply(self.normalized_subclass_idf).tocsr()
 
         self.total_triples = len(self.KG)
-        # self.relation_counts = dict()
-        # for r in set(self.KG.predicates()):
-        #     # doing a loop to count seems to be slightly faster than to collect everything into a list and get its len
-        #     r_count = 0
-        #     for s, o in self.KG.subject_objects(predicate=r):
-        #         r_count += 1
-        #     self.relation_counts[r] = r_count
 
         self.dummy_triples = []
 
@@ -77,15 +70,13 @@ class EvCBR:
 
         self.cycle_cache = dict()
 
-        # self.sparql_endpoint = SPARQLWrapper("http://localhost:3030/www_fb_experiments/query")
-
     def set_forecast_triples(self, dummy_triples):
         self.added_dummy_triples = []
         for t in dummy_triples:
             if t not in self.KG:
                 self.KG.add(t)
                 self.added_dummy_triples.append(t)
-                # also add the triple to the dict since i'm also using that... TODO go back to just using the KG or the dict
+
                 if t[0] not in self.triple_dict_forward.keys():
                     self.triple_dict_forward[t[0]] = {}
                 if t[1] not in self.triple_dict_forward[t[0]].keys():
@@ -105,46 +96,6 @@ class EvCBR:
             self.triple_dict_forward[t[0]][t[1]].remove(t[2])
             self.triple_dict_backward[t[2]][t[1]].remove(t[0])
         self.added_dummy_triples = []
-
-    # def sparql_follow_rdf_path(self, subj: URIRef, remaining_path: Tuple[Tuple[URIRef, str]],
-    #                            path_nodes: List[URIRef], ignore_nodes: Set[URIRef] = set(),
-    #                            max_next_step: int = 1000) -> List[URIRef]:
-    #
-    #     sparql_string = "http://localhost:3030"
-    #
-    #     prev_target = f"<{sparql_string+subj}>"
-    #     next_target = "?o"
-    #     query_string = ""
-    #     selected_vars = []
-    #     for (pred, dir) in remaining_path:
-    #         selected_vars.append(next_target)
-    #         if dir == "forward":
-    #             query_string += f"{prev_target} <{sparql_string+pred}> {next_target}.\n"
-    #         else:
-    #             query_string += f"{next_target} <{sparql_string+pred}> {prev_target}.\n"
-    #         prev_target = next_target
-    #         next_target += "o"
-    #     output_target = prev_target
-    #     format_string = f"""
-    #     select {" ".join(selected_vars)}
-    #     where {{
-    #         {query_string}
-    #     }}
-    #     """
-    #     self.sparql_endpoint.setQuery(format_string)
-    #     self.sparql_endpoint.setReturnFormat(JSON)
-    #     results = self.sparql_endpoint.query().convert()
-    #     sparql_path_results = []
-    #     sv_no_qmark = [sv[1:] for sv in selected_vars]
-    #     for o in results['results']['bindings']:
-    #         result_values = set(o[svnq]['value'] for svnq in sv_no_qmark)
-    #         # convert stuff to sets to filter out any case where a path lead to backtracking
-    #         if len(result_values) == len(sv_no_qmark):
-    #             # add the last output query's value
-    #             output_uri = URIRef(o[output_target[1:]]['value'][len(sparql_string):])
-    #             if output_uri not in ignore_nodes:
-    #                 sparql_path_results.append(output_uri)
-    #     return sparql_path_results
 
     def get_outgoing_paths_to_targets(self, *, source_node, start_nodes,
                                       target_nodes: Set[URIRef], target_invalid_node,
@@ -211,12 +162,8 @@ class EvCBR:
         dir = remaining_path[0][1]
         path_result = defaultdict(lambda: 0)
         if dir == "forward":
-            # next_nodes = [n for n in self.KG.objects(subject=subj, predicate=pred)
-            #               if n != subj and n not in ignore_nodes]
             next_nodes = self.triple_dict_forward[subj].get(pred, set()) - {subj} - ignore_nodes - strict_test_ignore_incoming_to
         else:
-            # next_nodes = [n for n in self.KG.subjects(predicate=pred, object=subj)
-            #               if n != subj and n not in ignore_nodes]
             if subj in strict_test_ignore_incoming_to:
                 return {}
             next_nodes = self.triple_dict_backward[subj].get(pred, set()) - {subj} - ignore_nodes
@@ -234,10 +181,8 @@ class EvCBR:
                     path_result[k] += v
             else:
                 updated_path = path_nodes + [o]
-                # current use of ignore nodes might be preventing loops that should be correct from being identified
                 path_cache[cache_tuple] = self.follow_rdf_path(subj=o, remaining_path=remaining_path[1:],
                                                                path_nodes=updated_path,
-                                                               # ignore_nodes=ignore_nodes.union({subj}),
                                                                strict_test_ignore_incoming_to=strict_test_ignore_incoming_to,
                                                                ignore_nodes=ignore_nodes,
                                                                max_next_step=max_next_step, path_cache=path_cache)
@@ -375,7 +320,6 @@ class EvCBR:
                 get_cycles = True
                 sc_effect_targets.remove(sc_cause_uri)
             # get paths to all potential targets at once
-            # all_paths = list(nx.all_simple_edge_paths(self.NX_KG, sc_cause_uri, sc_effect_targets, cutoff=max_hops))
             all_paths = self.get_outgoing_paths_to_targets(source_node=sc_cause_uri,
                                                            start_nodes=relevant_cause_firststep_vals,
                                                            target_nodes=sc_effect_targets,
@@ -387,7 +331,6 @@ class EvCBR:
                                                               target_connectors=relevant_cause_firststep_vals,
                                                               target_invalid_node=sc_effect_uri,
                                                               max_hops=max_hops)
-                # smallcycles = self.get_and_format_cycles(sc_cause_uri, max_hops)
                 all_paths += smallcycles
 
             # sort out the paths based on the relation they correspond to
@@ -398,18 +341,6 @@ class EvCBR:
                     # it matches with an entity for the target property
                     if p[-1][-1] in sc_effect_properties[prop]:
                         prop_paths[prop].append(p)
-
-                    # this logic is now handled in the updated get_outgoing_paths_to_targets code
-                    # # we only care about this path if the first step takes a path through a relevant relation
-                    # if p[0][1] not in relevant_cause_firststep_vals:
-                    #     continue
-                    # # if the path goes through the effect node, ignore it
-                    # contains_effect = False
-                    # for pp in p:
-                    #     if pp[0] == sc_effect_uri or pp[1] == sc_effect_uri:
-                    #         contains_effect=True
-                    # if contains_effect:
-                    #     continue
 
             for prop, paths in prop_paths.items():
 
@@ -483,7 +414,6 @@ class EvCBR:
                 miniprop_successes = defaultdict(lambda: 0)
                 miniprop_totals = defaultdict(lambda: 0)
                 for path_edges in all_path_edges:
-                    # prop_path_stats[prop]['path_counts'][tuple(path_edges)] += 1
                     miniprop_counts[path_edges] += 1
                     ft = time.time()
                     if (sc_cause_uri, tuple(path_edges)) in res_cache.keys():
@@ -492,8 +422,6 @@ class EvCBR:
                         path_forecasts = self.follow_rdf_path_fastish(subj=sc_cause_uri, remaining_path=tuple(path_edges),
                                                               strict_test_ignore_incoming_to=set([dummy_target_uri]),
                                                               path_nodes=[], path_cache=dict())
-                        # path_forecasts = self.follow_rdf_path_fast(subj=sc_cause_uri, remaining_path=tuple(path_edges),
-                        #                                       strict_test_ignore_incoming_to=set([dummy_target_uri]))
                         res_cache[(sc_cause_uri, tuple(path_edges))] = path_forecasts
                     follow_times += time.time()-ft
                     if not path_forecasts:
@@ -504,9 +432,6 @@ class EvCBR:
                         if eff_ent in path_forecasts.keys():
                             miniprop_successes[path_edges] += path_forecasts[eff_ent]
                     miniprop_totals[path_edges] += sum(path_forecasts.values())
-                    # miniprop_successes[path_edges] += len(
-                    #     [f for f in path_forecasts if f in sc_effect_properties[prop]])
-                    # miniprop_totals[path_edges] += len(path_forecasts)
 
                 # new stuff
                 for path_edges in set(all_path_edges):
@@ -515,18 +440,12 @@ class EvCBR:
                         prop_path_stats[prop]['path_successful_results'][path_edges] += miniprop_successes[path_edges]
                         prop_path_stats[prop]['path_total_results'][path_edges] += miniprop_totals[path_edges]
                         prop_path_stats[prop]['path_precision'][path_edges].append(
-                            # miniprop_counts[path_edges]*miniprop_successes[path_edges]/miniprop_totals[path_edges])
-                            # (miniprop_counts[path_edges]/len(all_path_edges))*miniprop_successes[path_edges]/miniprop_totals[path_edges])
                             miniprop_successes[path_edges]/(miniprop_totals[path_edges]+SMOOTHING_CONSTANT))
 
         for p, ps in prop_path_stats.items():
             if ps['total_sampled_paths'] == 0:
                 continue
             for k in ps['path_successful_results'].keys():
-                # ps['path_precision'][k] = ps['path_successful_results'][k] / ps['path_total_results'][k]
-                # ps['path_precision'][k] = np.mean(ps['path_precision'][k])
-                # ps['path_precision'][k] = sum(ps['path_precision'][k])
-                # ps['path_precision'][k] = (ps['path_counts'][k]/ps['total_sampled_paths']) * (ps['path_successful_results'][k]/(ps['path_total_results'][k]+SMOOTHING_CONSTANT))
                 ps['path_precision'][k] = (ps['path_successful_results'][k]/(ps['path_total_results'][k]+SMOOTHING_CONSTANT))
 
         if print_info:
@@ -545,19 +464,14 @@ class EvCBR:
             forecast_support = defaultdict(lambda: 0.0)
 
             best_paths = sorted(ps['path_precision'].items(), key=lambda x: x[1], reverse=True)
-            # limit sample path count here or no? TODO
 
-            # for path, count in ps['path_counts'].items():
             for path, precision in best_paths:
 
                 path_forecast = self.follow_rdf_path_fastish(subj=dummy_target_uri, remaining_path=tuple(path),
                                                       strict_test_ignore_incoming_to=set([dummy_target_uri]),
                                                       path_nodes=[], path_cache=dict())
-                # path_forecast = self.follow_rdf_path_fast(subj=dummy_target_uri, remaining_path=path,
-                #                                           strict_test_ignore_incoming_to=set([dummy_target_uri]),)
                 if path_forecast:
                     valid_path_count += 1
-                # for (forecast_ent, forecast_path_result) in path_forecast:
                 for forecast_ent, forecast_ent_count in path_forecast.items():
                     total_paths += 1
                     path_val = precision
@@ -578,26 +492,8 @@ class EvCBR:
         forecast_res = CaseSupport(property_entity_support=prop_forecasts,
                                    similar_cause_effect_pairs=sim_ce,
                                    c_to_e_paths=all_seen_paths)
-        # self.clean_forecast_triples()
 
         return forecast_res
-
-    def forecast_effect_reverse_predictions(
-            self, *,
-            prop_forecasts: Dict[URIRef, Dict[URIRef, float]],
-            dummy_target_uri: URIRef,
-            triples_for_inductive_forecast: List[Tuple[URIRef, URIRef, URIRef]],
-            similar_case_effects: List[SimilarCauseEffectChoices],
-            max_hops: int = 3, sample_path_count: int = 25,
-            prevent_inverse_paths: bool = False
-    ) -> ReversedPropertiesAndSupport:
-        return self.forecast_effect_reverse_predictions_altversion1(
-            prop_forecasts=prop_forecasts, dummy_target_uri=dummy_target_uri,
-            triples_for_inductive_forecast=triples_for_inductive_forecast,
-            similar_case_effects=similar_case_effects,
-            max_hops=max_hops, sample_path_count=sample_path_count,
-            prevent_inverse_paths=prevent_inverse_paths
-        )
 
     def get_and_refine_similar_cases(self, *, target_entity: URIRef) -> List:
         similar_cases = self.collect_similar_events_with_effects(target_entity)
@@ -653,7 +549,6 @@ class EvCBR:
 
         for k, v in target_outgoing.items():
             for ent in v:
-                # weighted_sim = sim_weight[k][ent]*sims
                 target_outgoing_sims[k][ent] = weighted_sim[out_to_id[ent]]
 
         candidate_scores = dict()
@@ -669,7 +564,6 @@ class EvCBR:
                     if cand_out_ent in self.e2i.keys():
                         for ent, sim in sims.items():
                             max_sim = max(max_sim, sim_weight[k][ent]*sim[0, self.e2i[cand_out_ent]])
-                            # max_sim = max(max_sim, sim[self.e2i[cand_out_ent], 0]) # unweighted sims?
                 total_score += max_sim
                 candidate_score_breakdown[c].append(max_sim)
             candidate_scores[c] = total_score
@@ -700,7 +594,6 @@ class EvCBR:
                 obj_occ = len(list(self.KG.subject_predicates(object=o)))
                 match_count = len(list(self.KG.subjects(predicate=p, object=o)))
                 # set weight as the log of P(relation p given object o) / P(triples incoming to o in the KG)
-                # similar to pointwise mutual information...?
                 weight = np.log10((match_count/obj_occ) / (obj_occ/self.total_triples))
                 obj_weight[o] = weight
                 max_pred_weight = max(max_pred_weight, weight)
@@ -731,7 +624,6 @@ class EvCBR:
 
         for k, v in target_outgoing.items():
             for ent in v:
-                # weighted_sim = sim_weight[k][ent]*sims
                 target_outgoing_sims[k][ent] = weighted_sim[out_to_id[ent]]
 
         candidate_scores = dict()
@@ -749,7 +641,6 @@ class EvCBR:
                     if cand_out_ent in self.e2i.keys():
                         for ent, sim in sims.items():
                             max_sim = max(max_sim, sim_weight[k][ent]*sim[0, self.e2i[cand_out_ent]])
-                            # max_sim = max(max_sim, sim[self.e2i[cand_out_ent], 0]) # unweighted sims?
                 total_score += max_sim
                 candidate_score_breakdown[c].append(max_sim)
             best_outgoing_sim = 0
@@ -791,7 +682,6 @@ class EvCBR:
                 obj_occ = len(list(self.KG.subject_predicates(object=o)))
                 match_count = len(list(self.KG.subjects(predicate=p, object=o)))
                 # set weight as the log of P(relation p given object o) / P(triples incoming to o in the KG)
-                # similar to pointwise mutual information...?
                 weight = np.log10((match_count/obj_occ) / (obj_occ/self.total_triples))
                 obj_weight[o] = weight
                 max_pred_weight = max(max_pred_weight, weight)
@@ -822,7 +712,6 @@ class EvCBR:
 
         for k, v in target_outgoing.items():
             for ent in v:
-                # weighted_sim = sim_weight[k][ent]*sims
                 target_outgoing_sims[k][ent] = weighted_sim[out_to_id[ent]]
 
         candidate_scores = dict()
@@ -842,7 +731,6 @@ class EvCBR:
                     if cand_out_ent in self.e2i.keys():
                         for ent, sim in sims.items():
                             max_sim = max(max_sim, sim_weight[k][ent]*sim[0, self.e2i[cand_out_ent]])
-                            # max_sim = max(max_sim, sim[self.e2i[cand_out_ent], 0]) # unweighted sims?
                 total_score += max_sim
                 candidate_score_breakdown[c].append(max_sim)
             best_outgoing_sim = 0
@@ -949,13 +837,7 @@ class EvCBR:
 
         return [self.i2e[c] for c in top_candidates if relation_overlap[0, c] != 0]
 
-
-
-    #######################
-    #######################
-    #######################
-    #######################
-    def forecast_effect_reverse_predictions_altversion1(
+    def forecast_effect_reverse_predictions(
             self, *,
             prop_forecasts: Dict[URIRef, Dict[URIRef, float]],
             dummy_target_uri: URIRef,
@@ -964,15 +846,6 @@ class EvCBR:
             max_hops: int = 3, sample_path_count: int = 25,
             prevent_inverse_paths: bool = False
     ) -> ReversedPropertiesAndSupport:
-
-        # # ONLY COMPUTING FOR TOP 100
-        # pftemp = dict()
-        # for k,v in prop_forecasts.items():
-        #     forecasts = v
-        #     sorted_forecasts = sorted(forecasts.items(), key=lambda x: x[1], reverse=True)[:100]
-        #     filtered_forecasts = {k:v for (k,v) in sorted_forecasts}
-        #     pftemp[k] = filtered_forecasts
-        # prop_forecasts = pftemp
 
         input_prop_targets = defaultdict(lambda: set())
         input_target_ents = set()
@@ -1016,7 +889,6 @@ class EvCBR:
                 cause_vals.remove(effect)
             # get paths to all potential targets at once
 
-            # all_paths = list(nx.all_simple_edge_paths(self.NX_KG, effect, list(cause_vals), cutoff=max_hops))
             all_paths = self.get_outgoing_paths_to_targets(source_node=effect,
                                                            start_nodes=relevant_effect_vals,
                                                            target_nodes=cause_vals,
@@ -1028,7 +900,6 @@ class EvCBR:
                                                 target_connectors=relevant_effect_vals,
                                                 target_invalid_node=cause,
                                                 max_hops=max_hops)
-                # smallcycles = self.get_and_format_cycles(effect, max_hops)
                 all_paths += smallcycles
 
             # sort out the paths based on the relation they correspond to
@@ -1039,19 +910,6 @@ class EvCBR:
                     # it matches with an entity for the target property
                     if p[-1][-1] in cause_prop_vals[prop]:
                         prop_paths[prop].append(p)
-
-                    # this logic is now handled in the updated get_outgoing_paths_to_targets code
-                    # check that paths start from an edge that is relevant to the forecast.
-                    # since networkx's paths don't explicitly give relations, just use the first node to check this.
-                    # if p[0][1] not in relevant_effect_vals:
-                    #     continue
-                    # check that the path doesn't go through the cause node
-                    # contains_cause = False
-                    # for pp in p:
-                    #     if pp[0] == cause or pp[1] == cause:
-                    #         contains_cause = True
-                    # if contains_cause:
-                    #     continue
 
             for prop, paths in prop_paths.items():
 
@@ -1132,7 +990,6 @@ class EvCBR:
                 miniprop_successes = defaultdict(lambda: 0)
                 miniprop_totals = defaultdict(lambda: 0)
                 for path_edges in all_path_edges:
-                    # prop_path_stats[prop]['path_counts'][tuple(path_edges)] += 1
                     miniprop_counts[path_edges] += 1
                     ft = time.time()
                     if (effect, tuple(path_edges)) in res_cache.keys():
@@ -1151,8 +1008,6 @@ class EvCBR:
                         if cause_ent in path_forecasts.keys():
                             miniprop_successes[path_edges] += path_forecasts[cause_ent]
                     miniprop_totals[path_edges] += sum(path_forecasts.values())
-                    # miniprop_successes[path_edges] += len([f for f in path_forecasts if f in cause_prop_vals[prop]])
-                    # miniprop_totals[path_edges] += len(path_forecasts)
                 # new stuff
                 for path_edges in set(all_path_edges):
                     if miniprop_totals[path_edges] > 0:
@@ -1161,13 +1016,9 @@ class EvCBR:
                         prop_path_stats[prop]['path_total_results'][path_edges] += miniprop_totals[path_edges]
                         prop_path_stats[prop]['path_precision'][path_edges].append(
                              miniprop_successes[path_edges]/(miniprop_totals[path_edges]+SMOOTHING_CONSTANT))
-                            # (all_path_counts[path_edges] / total_all_path_counts) * miniprop_successes[path_edges] / (
-                            #             miniprop_totals[path_edges] + SMOOTHING_CONSTANT))
 
         for p, ps in prop_path_stats.items():
             for k in ps['path_successful_results'].keys():
-                # ps['path_precision'][k] = ps['path_successful_results'][k] / ps['path_total_results'][k]
-                # ps['path_precision'][k] = np.mean(ps['path_precision'][k])
                 ps['path_precision'][k] = np.mean(ps['path_precision'][k])
         stime = time.time()
 
@@ -1198,9 +1049,6 @@ class EvCBR:
                                 testmypath_forecast = self.follow_rdf_path_fastish(subj=startent, remaining_path=path[1:],
                                                                       strict_test_ignore_incoming_to=set([dummy_target_uri]),
                                                                       path_nodes=[], path_cache=dict())
-                                # testmypath_forecast = self.follow_rdf_path_fast(subj=startent,
-                                #                                            remaining_path=path[1:],
-                                #                                            strict_test_ignore_incoming_to=set([dummy_target_uri]),)
                                 res_cache[(startent, tuple(path[1:]))] = testmypath_forecast
 
                             testmypath_forecast_set = set(testmypath_forecast.keys())
@@ -1253,7 +1101,7 @@ class EvCBR:
             combo_simplified4[cprop] = sorted_starters4
 
             backwards_effect_prop_support[cprop] = ent_score_dict_v4_unsquashed
-            # max_input_supports[cprop] = max_prop_scores
+
             max_input_supports[cprop] = None
 
         ##########
