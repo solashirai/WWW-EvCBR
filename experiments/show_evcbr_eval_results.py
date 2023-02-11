@@ -135,25 +135,15 @@ def main(load_file, eval_res_dir, has_reverse, data_dir, save_file):
             prank = np.mean(p['inner_ranks'])
             firsthop_avg_ranks[k[1]].append(prank)
             cause_ranks.append(prank)
-            # prank = np.min(p['inner_ranks'])
 
             if prank != rankmax:
                 nonzero_ranks.append(prank)
                 nonzero_prop_ranks[p['prop_uri']].append(prank)
 
             prop_ranks[p['prop_uri']].append(prank)
-            if prank == 1:
-                total_h1.append(1)
-            else:
-                total_h1.append(0)
-            if prank <= 10:
-                total_h10.append(1)
-            else:
-                total_h10.append(0)
-            if prank <= 100:
-                total_h100.append(1)
-            else:
-                total_h100.append(0)
+            total_h1.append(1 if prank==1 else 0)
+            total_h10.append(1 if prank<=10 else 0)
+            total_h100.append(1 if prank<=100 else 0)
             total_ranks.append(prank)
 
             for t in target_cause_types:
@@ -167,38 +157,17 @@ def main(load_file, eval_res_dir, has_reverse, data_dir, save_file):
                     nonzero_r_ranks.append(rprank)
                     nonzero_prop_r_ranks[p['prop_uri']].append(rprank)
                 prop_r_ranks[p['prop_uri']].append(rprank)
-                if rprank == 1:
-                    total_r_h1.append(1)
-                else:
-                    total_r_h1.append(0)
-                if rprank <= 10:
-                    total_r_h10.append(1)
-                else:
-                    total_r_h10.append(0)
-                if rprank <= 100:
-                    total_r_h100.append(1)
-                    combo_parts += 1
-                else:
-                    total_r_h100.append(0)
+                total_r_h1.append(1 if rprank==1 else 0)
+                total_r_h10.append(1 if rprank<=10 else 0)
+                total_r_h100.append(1 if rprank<=100 else 0)
                 total_r_ranks.append(rprank)
-
 
                 rpfrank = np.mean(p['rev_plus_fwd'])
                 cause_rpf_ranks.append(rpfrank)
                 prop_rpf_ranks[p['prop_uri']].append(rpfrank)
-                if rpfrank == 1:
-                    total_rpf_h1.append(1)
-                else:
-                    total_rpf_h1.append(0)
-                if rpfrank <= 10:
-                    total_rpf_h10.append(1)
-                else:
-                    total_rpf_h10.append(0)
-                if rpfrank <= 100:
-                    total_rpf_h100.append(1)
-                    combo_parts += 1
-                else:
-                    total_rpf_h100.append(0)
+                total_rpf_h1.append(1 if rpfrank==1 else 0)
+                total_rpf_h10.append(1 if rpfrank<=10 else 0)
+                total_rpf_h100.append(1 if rpfrank<=100 else 0)
                 total_rpf_ranks.append(rpfrank)
 
         rev_event_mrrs[k].append(np.mean([1/r for r in cause_rev_ranks]))
