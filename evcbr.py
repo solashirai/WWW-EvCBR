@@ -12,7 +12,7 @@ from scipy.sparse import dok_matrix
 import time
 from pathlib import Path
 from case_support import CaseSupport
-from similar_cause_effect_choices import SimilarCauseEffectChoices
+from similar_cause_effect_choice import SimilarCauseEffectChoice
 from reversed_properties_and_support import ReversedPropertiesAndSupport
 
 
@@ -272,19 +272,20 @@ class EvCBR:
 
 
         sim_ce = []
-        for spe in similar_cause_effects:
+        for ind, spe in enumerate(similar_cause_effects):
             cause = spe[0]
             effect = spe[1]
+
             cause_props = defaultdict(lambda: [])
             for p,o in self.KG.predicate_objects(subject=cause):
                 cause_props[p].append(o)
             effect_props = defaultdict(lambda: [])
             for p,o in self.KG.predicate_objects(subject=effect):
                 effect_props[p].append(o)
-            sim_ce.append(SimilarCauseEffectChoices(cause=cause, effect=effect,
-                                                    cause_properties=dict(cause_props),
-                                                    effect_properties=dict(effect_props)))
 
+            sim_ce.append(SimilarCauseEffectChoice(cause=cause, effect=effect,
+                                                   cause_properties=dict(cause_props),
+                                                   effect_properties=dict(effect_props)))
 
         starttime = time.time()
         prop_path_stats = {p:
@@ -842,7 +843,7 @@ class EvCBR:
             prop_forecasts: Dict[URIRef, Dict[URIRef, float]],
             dummy_target_uri: URIRef,
             triples_for_inductive_forecast: List[Tuple[URIRef, URIRef, URIRef]],
-            similar_case_effects: List[SimilarCauseEffectChoices],
+            similar_case_effects: List[SimilarCauseEffectChoice],
             max_hops: int = 3, sample_path_count: int = 25,
             prevent_inverse_paths: bool = False
     ) -> ReversedPropertiesAndSupport:
