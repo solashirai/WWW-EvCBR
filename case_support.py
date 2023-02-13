@@ -9,6 +9,7 @@ class CaseSupport:
     property_entity_support: Dict[URIRef, Dict[URIRef, float]]
     similar_cause_effect_pairs: List[SimilarCauseEffectChoice]
     c_to_e_paths: Set[Tuple[Tuple[URIRef, str]]]
+    property_prediction_paths: Dict[URIRef, Dict[URIRef, Dict[URIRef, Dict[Tuple[URIRef,...], float]]]]
 
     def sorted_property_prediction(self, *, property_uri: URIRef) -> List[Tuple[URIRef, float]]:
         prop_dict = self.property_entity_support[property_uri]

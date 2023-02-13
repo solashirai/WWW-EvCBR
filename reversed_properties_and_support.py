@@ -9,4 +9,3 @@ class ReversedPropertiesAndSupport:
     property_prediction_support: Dict[URIRef, Dict[URIRef, float]]
     property_max_input_scores: Dict[URIRef, Dict[URIRef, float]]
     property_input_support: Dict[URIRef, Dict[URIRef, float]]
-

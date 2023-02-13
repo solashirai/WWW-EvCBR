@@ -201,7 +201,8 @@ class EvCBR:
                          print_info: bool = False,
                          precomputed_similar_cases: List[Tuple[URIRef, URIRef]] = None,
                          prevent_inverse_paths: bool = False,
-                         dummy_connecting_relation_uri: URIRef = WDT_HASEFFECT) -> \
+                         dummy_connecting_relation_uri: URIRef = WDT_HASEFFECT,
+                         save_path_info: bool = False) -> \
             CaseSupport:
         forecast_relations = set(forecast_relations)
         total_case_count = sample_case_count + sample_case_cov_count
@@ -458,11 +459,13 @@ class EvCBR:
         starttime = time.time()
 
         prop_forecasts = dict()
+        prop_pred_paths = dict()
         for p, ps in prop_path_stats.items():
             inner_starttime = time.time()
             valid_path_count = 0
             total_paths = 0
             forecast_support = defaultdict(lambda: 0.0)
+            forecast_paths = defaultdict(lambda: defaultdict(lambda: dict()))
 
             best_paths = sorted(ps['path_precision'].items(), key=lambda x: x[1], reverse=True)
 
@@ -477,6 +480,8 @@ class EvCBR:
                     total_paths += 1
                     path_val = precision
                     forecast_support[forecast_ent] += path_val*forecast_ent_count
+                    if save_path_info:
+                        forecast_paths[forecast_ent][path] = path_val*forecast_ent_count
 
             for k, v in forecast_support.items():
                 forecast_support[k] = v / total_paths
@@ -486,13 +491,15 @@ class EvCBR:
 
                 print(f"time taken: {time.time() - inner_starttime}")
             prop_forecasts[p] = dict(forecast_support)
+            prop_pred_paths[p] = {k: dict(v) for k,v in forecast_paths.items()}
 
         if print_info:
             print(f"time taken for all properties: {time.time()-starttime}")
 
         forecast_res = CaseSupport(property_entity_support=prop_forecasts,
                                    similar_cause_effect_pairs=sim_ce,
-                                   c_to_e_paths=all_seen_paths)
+                                   c_to_e_paths=all_seen_paths,
+                                   property_prediction_paths=prop_pred_paths)
 
         return forecast_res
 
