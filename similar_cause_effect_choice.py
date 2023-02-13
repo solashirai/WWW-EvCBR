@@ -4,7 +4,7 @@ from rdflib import URIRef
 
 
 @dataclass
-class SimilarCauseEffectChoices:
+class SimilarCauseEffectChoice:
     cause: URIRef
     effect: URIRef
     cause_properties: Dict[URIRef, List[URIRef]]
