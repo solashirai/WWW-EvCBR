@@ -9,3 +9,5 @@ flask
 ortools
 jupyter
 frozendict
+graphviz
+pydotplus
