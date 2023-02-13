@@ -17,17 +17,20 @@ from utils import *
 def load_indexes(data_dir):
     entity_to_index = dict()
     relation_to_index = dict()
-    with open((data_dir / "entities.dict").resolve(), "r") as f:
+    with open((data_dir / "entities.dict").resolve(), "r", encoding='utf-8') as f:
         for line in f:
             content = line.strip().split("\t")
             entity_to_index[URIRef(content[1])] = int(content[0])
-    with open((data_dir / "relations.dict").resolve(), "r") as f:
+    with open((data_dir / "relations.dict").resolve(), "r", encoding='utf-8') as f:
         for line in f:
             content = line.strip().split("\t")
             relation_to_index[URIRef(content[1])] = int(content[0])
     return entity_to_index, relation_to_index
 
-def vectorize_graph(in_dir: Path, out_dir: Path, do_outgoing_edges: bool = False,  do_two_hop: bool = False, do_superclasses: List[URIRef] = None):
+def vectorize_graph(in_dir: Path, out_dir: Path,
+                    do_outgoing_edges: bool = False,  do_two_hop: bool = False,
+                    do_superclasses: List[URIRef] = None,
+                    vectorize_rdflib_graph: Graph = None):
     # construct a 3d matrix of the form (s, p, o) to support faster calculation of adjacencies/paths
     print("initializing mapping of URIs to indexes")
     e2i, r2i = load_indexes(in_dir)
@@ -37,13 +40,21 @@ def vectorize_graph(in_dir: Path, out_dir: Path, do_outgoing_edges: bool = False
 
     print("starting conversion of triples into a dictionary of dictionaries.")
     ent_rel_matrix = dok_matrix((len(e2i.keys()), len(r2i.keys())))
-    with open((in_dir / "train.txt").resolve(), "r") as f:
-        for line in f:
-            triple = line.strip().split("\t")
-            s,p,o = URIRef(triple[0]), URIRef(triple[1]), URIRef(triple[2])
+    if vectorize_rdflib_graph:
+        for (s,p,o) in vectorize_rdflib_graph:
+            if isinstance(s,rdflib.Literal) or isinstance(o,rdflib.Literal):
+                continue
             formatted_graph[e2i[s]][r2i[p]].add(e2i[o])
             formatted_graph_inverse[e2i[o]][r2i[p]].add(e2i[s])
-            ent_rel_matrix[e2i[s],r2i[p]] = 1
+            ent_rel_matrix[e2i[s], r2i[p]] = 1
+    else:
+        with open((in_dir / "train.txt").resolve(), "r") as f:
+            for line in f:
+                triple = line.strip().split("\t")
+                s,p,o = URIRef(triple[0]), URIRef(triple[1]), URIRef(triple[2])
+                formatted_graph[e2i[s]][r2i[p]].add(e2i[o])
+                formatted_graph_inverse[e2i[o]][r2i[p]].add(e2i[s])
+                ent_rel_matrix[e2i[s],r2i[p]] = 1
 
     ent_rel_matrix = ent_rel_matrix.tocsr()
     # convert back to normal dictionaries to enable pickling
