@@ -18,7 +18,7 @@ def visualize(g: Graph, imname) -> None:
 
     # displaying image seemed to sometimes run into memory errors, so just save the image as a
     # png then have jupyter display it separately
-    dg.write_png(imname)
+    #dg.write_png(imname)
     png = dg.create_png()
     display(Image(png))
     #Image(filename=imname)
