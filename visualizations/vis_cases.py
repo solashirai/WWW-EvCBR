@@ -28,6 +28,8 @@ def make_case_graph(c: SimilarCauseEffectChoice, kg: Graph, connecting_prop: URI
                     cause_props: List[URIRef], effect_props: List[URIRef],
                     workaround_country: URIRef = None) -> Graph:
     case_graph = Graph()
+    case_graph.bind("wd", WD)
+    case_graph.bind("wdt", WDT)
 
     # the property connecting the "cause" and "effect" isn't included in the data, so supply it manually
     case_graph.add((c.cause, connecting_prop, c.effect))
