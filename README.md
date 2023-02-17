@@ -1,6 +1,6 @@
 # EvCBR
 This repository contains code for our WWW'23 paper "Event Prediction using Case-Based Reasoning over
-Knowledge Graphs" (paper link to be added)
+Knowledge Graphs" ([view pre-print pdf](evcbr_paper.pdf)) (official paper link to be added)
 
 EvCBR is a case-based reasoning model for performing event prediction using knowledge graphs.
 The main idea of our work is to (1) frame the task of event prediction as a 2-hop inductive link prediction task,
