@@ -10,7 +10,7 @@ from utils import *
 import random
 
 
-def visualize(g: Graph, imname) -> None:
+def visualize(g: Graph) -> None:
     stream = io.StringIO()
     mrdf2dot(g, stream, opts = {display})
     dg = pydotplus.graph_from_dot_data(stream.getvalue())
@@ -18,10 +18,8 @@ def visualize(g: Graph, imname) -> None:
 
     # displaying image seemed to sometimes run into memory errors, so just save the image as a
     # png then have jupyter display it separately
-    #dg.write_png(imname)
     png = dg.create_png()
     display(Image(png))
-    #Image(filename=imname)
 
 
 def make_case_graph(c: SimilarCauseEffectChoice, kg: Graph, connecting_prop: URIRef,
@@ -70,7 +68,6 @@ def make_case_graph(c: SimilarCauseEffectChoice, kg: Graph, connecting_prop: URI
 
 def visualize_supporting_case(c: SimilarCauseEffectChoice, kg: Graph, connecting_prop:URIRef,
                               cause_props: List[URIRef], effect_props: List[URIRef],
-                              imname: str,
                               workaround_country: URIRef = None) -> None:
     cg = make_case_graph(c, kg, connecting_prop, cause_props, effect_props, workaround_country)
-    visualize(cg, imname)
+    visualize(cg)

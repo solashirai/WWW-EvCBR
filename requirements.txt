@@ -11,3 +11,4 @@ jupyter
 frozendict
 graphviz
 pydotplus
+pandas
