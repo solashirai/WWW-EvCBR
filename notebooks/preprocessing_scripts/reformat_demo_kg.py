@@ -5,6 +5,8 @@ from rdflib import Graph, Literal
 
 #%%
 
+if not os.path.isdir((dkgdir:=(DATA_DIR/"demo_kg").resolve())):
+    os.mkdir(dkgdir)
 kg_file = (DATA_DIR /"wikidata_cc_full_3_hop.ttl").resolve()
 full_kg_file = (DATA_DIR / "demo_kg"/"wikidata_cc_full_3_hop.nt").resolve()
 model_kg_file = (DATA_DIR / "demo_kg"/"wikidata_cc_nolit_3_hop.nt").resolve()
