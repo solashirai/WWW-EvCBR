@@ -12,3 +12,4 @@ frozendict
 graphviz
 pydotplus
 pandas
+ipysigma
