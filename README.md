@@ -28,6 +28,12 @@ experiments were performed using Python 3.8
 
 `pip install -r requirements.txt`
 
+## Demo Scripts and Visualizations
+
+Our ISWC 2023 Demo for predictions and visualizations can be found in `notebooks/improved_viz_demo.ipynb`.
+
+To run the demo, you will first have to run a couple of preprocessing scripts. Please run `notebooks/preprocessing_scripts/reformat_demo_kg.py` followed by `notebooks/preprocessing_scripts/preprocess_full_dataset.py` to prepare the data. After that, you can step through the jupyter notebook to test out EvCBR's predictions and simple visualizations.
+
 ## Setup and Running the Experiments
 
 The experiments can be run using 4 scripts to (1) split the Wikidata-based event data into
